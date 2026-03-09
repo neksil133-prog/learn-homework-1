@@ -13,6 +13,8 @@
 
 """
 import logging
+import ephem
+import datetime
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
@@ -39,7 +41,30 @@ def greet_user(update, context):
 def talk_to_me(update, context):
     user_text = update.message.text
     print(user_text)
-    update.message.reply_text(text)
+    update.message.reply_text(user_text)
+
+
+def planet(update, context):
+    user_text = update.message.text
+    parts = user_text.split()
+
+    if len(parts) < 2:
+        update.message.reply_text("Напишите: /planet Mars")
+        return
+
+    planet_name = parts[1]
+
+    try:
+        planet_class = getattr(ephem, planet_name)
+        planet_obj = planet_class(datetime.date.today())
+
+        constellation = ephem.constellation(planet_obj)
+        update.message.reply_text(
+            f"Планета {planet_name} сейчас в созвездии {constellation[1]}"
+        )
+
+    except AttributeError:
+        update.message.reply_text("Я не знаю такую планету")
 
 
 def main():
@@ -47,6 +72,7 @@ def main():
 
     dp = mybot.dispatcher
     dp.add_handler(CommandHandler("start", greet_user))
+    dp.add_handler(CommandHandler("planet", planet))
     dp.add_handler(MessageHandler(Filters.text, talk_to_me))
 
     mybot.start_polling()
